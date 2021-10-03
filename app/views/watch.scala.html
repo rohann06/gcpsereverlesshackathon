@@ -1,0 +1,134 @@
+@*
+ * Copyright 2020 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *@
+
+@(arena: Arena.Path)(implicit request: RequestHeader)
+
+@import helper._
+
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="initial-scale=1, viewport-fit=cover">
+
+    <title>Cloud Bowl</title>
+
+    <!-- todo
+    <link rel="shortcut icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" href="@routes.Assets.versioned("logo.png")">
+    -->
+
+
+    <style>
+        /*
+        These are here so that we can overlay the modal before the css loads
+        */
+
+        #modal {
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background-color: #ffffff;
+            position: absolute;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 36px;
+        }
+
+        .lds-ring {
+            display: inline-block;
+            position: relative;
+            width: 80px;
+            height: 80px;
+        }
+        .lds-ring div {
+            box-sizing: border-box;
+            display: block;
+            position: absolute;
+            width: 64px;
+            height: 64px;
+            margin: 8px;
+            border-top: 8px solid #222222;
+            border-right: 8px solid transparent;
+            border-bottom: 8px solid transparent;
+            border-left: 8px solid transparent;
+            border-radius: 50%;
+            animation: lds-ring 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+        }
+        .lds-ring div:nth-child(1) {
+            animation-delay: -0.45s;
+        }
+        .lds-ring div:nth-child(2) {
+            animation-delay: -0.3s;
+        }
+        .lds-ring div:nth-child(3) {
+            animation-delay: -0.15s;
+        }
+        @@keyframes lds-ring {
+            0% {
+              transform: rotate(0deg);
+            }
+            100% {
+              transform: rotate(360deg);
+            }
+        }
+
+        @@media only screen and (max-width: 600px) {
+            #modal {
+                display: inline-block;
+                text-align: center;
+            }
+            .lds-ring {
+                display: block;
+                margin-left: auto;
+                margin-right: auto;
+            }
+        }
+
+    </style>
+
+    <link rel="stylesheet" href="@routes.Assets.versioned("styles/watch.css")">
+    <script src="@routes.Assets.versioned("javascripts/watch.js")"></script>
+</head>
+<body data-updatesurl="@controllers.routes.Main.updates(arena, java.util.UUID.randomUUID)">
+    <div>
+        <span id="title"></span>
+        <div id="links">
+            <form id="instructions">
+                <button type="submit" formtarget="_blank">instructions</button>
+            </form>
+            <form id="join" action="@controllers.routes.Main.join(arena)">
+                <button type="submit">join</button>
+            </form>
+        </div>
+    </div>
+    <div id="arena"></div>
+    <span id="scoreboardTitle">
+        High Scores
+        @form(action = CSRF(controllers.routes.Main.scoresReset(arena)), Symbol("id") -> "scoresResetForm") {
+            <input id="scoresResetImg" type="image" src="https://noto-website-2.storage.googleapis.com/emoji/emoji_u1f44a.png" disabled>
+        }
+    </span>
+    <div id="scoreboard"></div>
+    <div id="modal">
+        <span id="message">Loading the microbots</span>
+        <div class="lds-ring"><div></div><div></div><div></div><div></div></div>
+    </div>
+</body>
+</html>

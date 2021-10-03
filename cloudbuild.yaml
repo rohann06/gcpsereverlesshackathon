@@ -1,0 +1,41 @@
+steps:
+- name: 'gcr.io/cloud-builders/git'
+  entrypoint: 'bash'
+  env: [ 'GIT_DISCOVERY_ACROSS_FILESYSTEM=1' ]
+  args:
+    - '-c'
+    - |
+      git init
+      git config -f .gitmodules submodule.google-profanity-words.url https://github.com/RobertJGabriel/Google-profanity-words.git
+      git config -f .gitmodules submodule.google-profanity-words.path conf/google-profanity-words
+      git submodule init
+      git submodule update
+
+- name: 'adoptopenjdk/openjdk8'
+  entrypoint: './sbt'
+  args: ['test']
+
+- name: 'gcr.io/k8s-skaffold/pack'
+  entrypoint: 'pack'
+  args: ['build', '--builder=heroku/buildpacks:18', '--publish', 'gcr.io/$PROJECT_ID/$REPO_NAME:$COMMIT_SHA']
+
+#- name: 'gcr.io/cloud-builders/gcloud'
+#  args: ['run', 'deploy', '--image=gcr.io/$PROJECT_ID/$REPO_NAME:$COMMIT_SHA', '--platform=managed', '--project=$PROJECT_ID', '--region=us-central1', '--allow-unauthenticated', '--memory=512Mi', 'cloudbowl']
+
+- name: 'gcr.io/cloud-builders/gcloud'
+  entrypoint: '/bin/sh'
+  args:
+  - '-c'
+  - |
+     sed -e 's/$$PROJECT_ID/'"$PROJECT_ID"'/g' kubernetes.yaml.tpl | \
+     sed -e 's/$$REPO_NAME/'"$REPO_NAME"'/g' | \
+     sed -e 's/$$COMMIT_SHA/'"$COMMIT_SHA"'/g' > kubernetes.yaml
+
+- name: 'gcr.io/cloud-builders/kubectl'
+  args: ['apply', '-f', 'kubernetes.yaml']
+  env:
+  - 'CLOUDSDK_COMPUTE_REGION=${_CLOUDSDK_COMPUTE_REGION}'
+  - 'CLOUDSDK_CONTAINER_CLUSTER=${_CLOUDSDK_CONTAINER_CLUSTER}'
+
+options:
+  machineType: 'N1_HIGHCPU_8'
